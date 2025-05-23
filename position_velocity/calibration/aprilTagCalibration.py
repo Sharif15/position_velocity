@@ -3,6 +3,9 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
+
+from ament_index_python.packages import get_package_share_directory
+
 import numpy as np
 import cv2
 import yaml
@@ -18,9 +21,15 @@ class AprilTagCalibrator(Node):
             self.tag_detection,
             10
         )
+        
+        # Get absolute paths to data files
+        pkg_share = get_package_share_directory('position_velocity')
+        intrinsics_path = os.path.join(pkg_share, 'data', 'intrinsics.yaml')
+        self.extrinsics_path = os.path.join(pkg_share, 'data', 'camera_extrinsics.yaml')
+
 
         # Load intrinsics from YAML
-        with open('data/intrinsics.yaml', 'r') as f:
+        with open(intrinsics_path, 'r') as f:
             calib = yaml.safe_load(f)
         self.camera_matrix = np.array(calib['camera_matrix']['data']).reshape(3, 3)
         self.dist_coeffs = np.array(calib['distortion_coefficients'])
@@ -88,7 +97,7 @@ class AprilTagCalibrator(Node):
             'transformation_matrix': transformation.tolist()
         }
 
-        with open('data/extrinsics.yaml', 'w') as f:
+        with open(self.extrinsics_path, 'w') as f:
             yaml.dump(data, f)
         self.get_logger().info("Extrinsics saved to camera_extrinsics.yaml")
 
