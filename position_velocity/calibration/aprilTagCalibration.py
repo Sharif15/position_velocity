@@ -11,6 +11,9 @@ import cv2
 import yaml
 import os
 
+import apriltag
+
+
 class AprilTagCalibrator(Node):
     def __init__(self):
         super().__init__('apriltag_calibrator')
@@ -42,19 +45,15 @@ class AprilTagCalibrator(Node):
             3: np.array([0.0, 30.0, 0.0]),         # Top-left
         }
 
-        # Set up AprilTag detector
-        # Currently using open Cv but could use Apriltag libray 
-        self.at_detector = cv2.AprilTagDetector_create()
-        self.at_detector.setAprilTagFamily("tag25h9") # can change the tag family depending on what tag was used 
+        # Use apriltag detector
+        self.at_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
 
     def tag_detection(self, msg):
         np_arr = np.frombuffer(msg.data, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        detector = cv2.AprilTagDetector_create()
-        detector.setAprilTagFamily("tag36h11")
-        tags = detector.detect(gray)
+        
+        tags = self.at_detector.detect(gray)
 
         img_points = []
         obj_points = []
