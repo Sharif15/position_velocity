@@ -11,8 +11,8 @@ setup(
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
         (f'share/{package_name}/data', [
-            'position_velocity/data/intrinsics.yaml',
-            'position_velocity/data/extrinsics.yaml'
+            'data/intrinsics.yaml',
+            'data/extrinsics.yaml'
             ]),
     ],
     install_requires=['setuptools'],
