@@ -1,11 +1,11 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 package_name = 'position_velocity'
 
 setup(
     name=package_name,
     version='0.0.1',
-    packages=[package_name],
+   packages=find_packages(where='.'),
     package_dir={'': '.'},
     data_files=[
         ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
