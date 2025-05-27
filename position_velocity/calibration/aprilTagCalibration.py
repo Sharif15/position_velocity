@@ -49,19 +49,36 @@ class AprilTagCalibrator(Node):
         self.at_detector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
 
     def tag_detection(self, msg):
+
         np_arr = np.frombuffer(msg.data, np.uint8)
         frame = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+        if frame is None:
+            self.get_logger().warn("Failed to decode image.")
+            return
+
+        if frame.size == 0:
+            self.get_logger().warn("Empty image received.")
+            return
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        cv2.imshow("Raw Image", gray)
+        cv2.waitKey(1)
         
         tags = self.at_detector.detect(gray)
+
+        if len(tags) > 50:
+            self.get_logger().warn(f"Too many tags detected: {len(tags)}. Skipping frame.")
+            return
 
         img_points = []
         obj_points = []
 
         for tag in tags:
-            tag_id = int(tag.getId())
+            tag_id = tag.tag_id
             if tag_id in self.world_points:
-                center = tag.getCenter()
+                center = tag.center
                 img_points.append(center)
                 obj_points.append(self.world_points[tag_id])
 
@@ -107,5 +124,9 @@ def main(args=None):
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
-    node.destroy_node()
-    rclpy.shutdown()
+    except Exception as e:
+        node.get_logger().error(f"Unhandled exception: {e}")
+    finally:
+        cv2.destroyAllWindows()
+        node.destroy_node()
+        rclpy.shutdown()

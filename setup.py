@@ -24,7 +24,10 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'april_tag_calibration = position_velocity.calibration.aprilTagCalibration:main'
+            'april_tag_calibration = position_velocity.calibration.aprilTagCalibration:main',
+            'tag_test = position_velocity.calibration.singleTagDetection:main',
+            'publish_image = position_velocity.imageDetection:main',
+            'center_camera = position_velocity.calibration.centerCamera:main'
         ],
     },
 )
