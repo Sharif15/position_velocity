@@ -18,13 +18,18 @@ from std_msgs.msg import Float64MultiArray
 
 
 class ConfigurableAprilTagCalibrator(Node):
-    def __init__(self, config_path=None):
+    def __init__(self, config_path):
         super().__init__('configurable_apriltag_calibrator')
         
+        if not config_path or not os.path.exists(config_path):
+            raise FileNotFoundError(f"Configuration file not found at: {config_path}")
+        
         # Load configuration
+        self.config_path = config_path
         self.load_config(config_path)
         
         self.calibration_complete = False
+        self.extrinsics_saved = False
         self.detection_count = 0
         self.pose_samples = []  # Store multiple pose samples for averaging
         
@@ -74,79 +79,11 @@ class ConfigurableAprilTagCalibrator(Node):
 
     def load_config(self, config_path=None):
         """Load configuration from YAML file"""
-        if config_path is None:
-            # Try to find config in package share directory
-            try:
-                pkg_share = get_package_share_directory('position_velocity')
-                config_path = os.path.join(pkg_share, 'config', 'apriltag_calibration.yaml')
-            except:
-                # Fallback to local config file
-                config_path = 'apriltag_calibration_config.yaml'
-        
-        # Default configuration
-        default_config = {
-            'apriltag': {
-                'target_id': 0,
-                'size': 0.15,  # meters
-                'family': 'tag36h11'
-            },
-            'paths': {
-                'intrinsics': 'intrinsics.yaml',
-                'extrinsics': 'extrinsics.yaml'
-            },
-            'camera': {
-                'topic': '/image_raw/compressed',
-                'target_width': 1920,
-                'target_height': 1080,
-                'process_every_n_frames': 2
-            },
-            'detection': {
-                'border': 1,
-                'nthreads': 1,
-                'quad_decimate': 2.0,
-                'quad_blur': 0.0,
-                'refine_edges': True,
-                'refine_decode': False,
-                'refine_pose': False,
-                'debug': False,
-                'quad_contours': True,
-                'required_stable_detections': 5,
-                'stability_window_seconds': 2.0
-            },
-            'preprocessing': {
-                'gaussian_blur_kernel': 3,
-                'enable_blur': True
-            }
-        }
-        
-        # Try to load config file
-        try:
-            with open(config_path, 'r') as f:
-                loaded_config = yaml.safe_load(f)
-                # Merge with defaults (loaded config overrides defaults)
-                self.config = self.merge_configs(default_config, loaded_config)
-                self.get_logger().info(f"Loaded configuration from: {config_path}")
-        except FileNotFoundError:
-            self.get_logger().warn(f"Config file not found: {config_path}")
-            self.get_logger().info("Creating default configuration file...")
-            self.config = default_config
-            self.save_default_config(config_path)
-        except Exception as e:
-            self.get_logger().error(f"Error loading config: {e}")
-            self.get_logger().info("Using default configuration")
-            self.config = default_config
-        
-        # Resolve relative paths
+        with open(self.config_path, 'r') as f:
+            self.config = yaml.safe_load(f)
         self.resolve_paths()
+        self.get_logger().info(f"Configuration loaded from: {self.config_path}")
 
-    def merge_configs(self, default, loaded):
-        """Recursively merge configuration dictionaries"""
-        for key, value in loaded.items():
-            if key in default and isinstance(default[key], dict) and isinstance(value, dict):
-                default[key] = self.merge_configs(default[key], value)
-            else:
-                default[key] = value
-        return default
 
     def resolve_paths(self):
         """Resolve relative paths in configuration"""
@@ -163,19 +100,6 @@ class ConfigurableAprilTagCalibrator(Node):
                 
         except Exception as e:
             self.get_logger().warn(f"Could not resolve package paths: {e}")
-
-    def save_default_config(self, config_path):
-        """Save default configuration to file"""
-        try:
-            # Create directory if it doesn't exist
-            os.makedirs(os.path.dirname(config_path), exist_ok=True)
-            
-            with open(config_path, 'w') as f:
-                yaml.dump(self.config, f, default_flow_style=False, indent=2)
-            self.get_logger().info(f"Default config saved to: {config_path}")
-            self.get_logger().info("Please edit the configuration file and restart the node")
-        except Exception as e:
-            self.get_logger().error(f"Failed to save default config: {e}")
 
     def print_config_summary(self):
         """Print configuration summary"""
@@ -251,7 +175,8 @@ class ConfigurableAprilTagCalibrator(Node):
             self.get_logger().error(f"AprilTag detection failed: {e}")
             cv2.putText(frame, "Detection Error - Check lighting/focus", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            cv2.imshow("Configurable AprilTag Calibration", frame)
+            display_fram = cv2.resize(frame, (960, 540))
+            cv2.imshow("Configurable AprilTag Calibration", display_fram)
             cv2.waitKey(1)
             return
         
@@ -362,9 +287,20 @@ class ConfigurableAprilTagCalibrator(Node):
                 cv2.rectangle(frame, (10, 160), (10 + int(bar_width * progress / required_detections), 160 + bar_height), (0, 255, 0), -1)
                 cv2.putText(frame, f"Stability: {progress}/{required_detections}", (10, 155), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-                
+                if self.extrinsics_saved:
+                    cv2.putText(frame, "CALIBRATION COMPLETE - Press 'q' to quit", (10, 200), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+                    cv2.putText(frame, "Extrinsics saved successfully!", (10, 230), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+
                 # Auto-save when we have enough stable detections
-                # if len(self.pose_samples) >= required_detections:/
+
+                if len(self.pose_samples) >= required_detections and not self.extrinsics_saved:
+                    self.get_logger().info("Stable detection achieved! Auto-saving extrinsics...")
+                    self.save_averaged_extrinsics()
+                    self.extrinsics_saved = True  # Set flag instead of calibration_complete
+
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord('q'):
                     self.get_logger().info("Stable detection achieved! Auto-saving extrinsics...")
@@ -380,7 +316,12 @@ class ConfigurableAprilTagCalibrator(Node):
             cv2.putText(frame, "Please ensure tag is visible and well-lit", (10, 60), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 100, 255), 2)
 
-        cv2.imshow("Configurable AprilTag Calibration", frame)
+        # cv2.imshow("Configurable AprilTag Calibration", frame)
+
+        # display is only for testing purposes will not be needed in the final product 
+
+        display_fram = cv2.resize(frame, (960, 540))
+        cv2.imshow("Configurable AprilTag Calibration", display_fram)
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -450,10 +391,6 @@ class ConfigurableAprilTagCalibrator(Node):
             self.get_logger().info(f"Average translation: {avg_tvec.flatten()}")
             self.get_logger().info(f"Distance to tag: {np.linalg.norm(avg_tvec):.3f}m")
             self.get_logger().info(f"Translation stability (std): {tvec_std}")
-            self.get_logger().info("Calibration node will now exit...")
-            
-            # Give user time to read the message
-            time.sleep(2.0)
             
         except Exception as e:
             self.get_logger().error(f"Failed to save extrinsics: {e}")
