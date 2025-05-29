@@ -1,0 +1,80 @@
+# AprilTag Calibration Configuration File
+# This file contains all configurable parameters for the AprilTag calibration process
+
+# AprilTag Settings
+apriltag:
+  target_id: 0              # ID of the AprilTag to use as origin reference
+  size: 0.15                 # Physical size of the tag in meters
+  family: "tag36h11"        # Tag family (tag36h11, tag25h9, tag16h5, tagCircle21h7, tagStandard41h12)
+
+# File Paths
+paths:
+  # Path to camera intrinsics YAML file
+  # Use absolute path or relative to package share directory
+  intrinsics: "intrinsics.yaml"
+  
+  # Path where extrinsics will be saved
+  # Use absolute path or relative to package share directory  
+  extrinsics: "extrinsics.yaml"
+
+# Camera Settings
+camera:
+  topic: "/image_raw/compressed"    # ROS topic for camera images
+  target_width: 1920                 # Target width for image processing (reduces computation)
+  target_height: 1080                # Target height for image processing
+  process_every_n_frames: 2         # Process every N frames (1=every frame, 2=every other frame, etc.)
+
+# Detection Parameters
+detection:
+  # AprilTag detector settings
+  border: 1                         # Tag border width in pixels
+  nthreads: 1                       # Number of threads for detection
+  quad_decimate: 2.0                # Decimate input image by this factor
+  quad_blur: 0.0                    # Apply low-pass blur to input image
+  refine_edges: true                # Spend more time trying to align edges
+  refine_decode: false              # Spend more time trying to decode tags
+  refine_pose: false                # Spend more time trying to precisely localize tags
+  debug: false                      # Enable debug output
+  quad_contours: true               # Use quad contours
+  
+  # Stability requirements for auto-save
+  required_stable_detections: 5     # Number of consecutive stable detections required
+  stability_window_seconds: 2.0     # Time window for considering detections as stable
+
+# Image Preprocessing
+preprocessing:
+  enable_blur: true                 # Enable Gaussian blur preprocessing
+  gaussian_blur_kernel: 3           # Kernel size for Gaussian blur (must be odd number)
+
+# Example configurations for different scenarios:
+
+# For high-precision applications:
+# detection:
+#   required_stable_detections: 10
+#   stability_window_seconds: 3.0
+#   refine_edges: true
+#   refine_decode: true
+
+# For faster processing:
+# camera:
+#   process_every_n_frames: 3
+# detection:
+#   quad_decimate: 3.0
+#   required_stable_detections: 3
+
+# For different tag families:
+# apriltag:
+#   family: "tag25h9"     # Smaller tags, less robust but faster
+#   family: "tag16h5"     # Even smaller, fastest detection
+#   family: "tagStandard41h12"  # Larger tags, more robust but slower
+
+# Common tag sizes (in meters):
+# - Small desktop tags: 0.05 - 0.1
+# - Medium tags: 0.1 - 0.2  
+# - Large wall-mounted tags: 0.2 - 0.5
+
+# Camera topic examples:
+# - Compressed images: "/image_raw/compressed"
+# - Uncompressed images: "/image_raw"
+# - Specific camera: "/camera/image_raw/compressed"
+# - USB camera: "/usb_cam/image_raw/compressed"

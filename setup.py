@@ -14,6 +14,7 @@ setup(
             'data/intrinsics.yaml',
             'data/extrinsics.yaml'
             ]),
+            (f'share/{package_name}',['position_velocity/config/apriltag_calibration_config.yaml'])
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -26,7 +27,8 @@ setup(
         'console_scripts': [
             'april_tag_calibration = position_velocity.calibration.aprilTagCalibration:main',
             'locate_tag = position_velocity.calibration.singleTagDetection:main',
-            'image_detection = position_velocity.imageDetection:main',
+            'object_detection = position_velocity.imageDetection:main',
+            'calibration = position_velocity.calibration.singleTagDetection_config:main'
         ],
     },
 )
