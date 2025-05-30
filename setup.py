@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+import os
 
 package_name = 'position_velocity'
 
@@ -8,21 +9,32 @@ setup(
    packages=find_packages(where='.'),
     package_dir={'': '.'},
     data_files=[
-        ('share/ament_index/resource_index/packages', ['resource/' + package_name]),
+        ('share/ament_index/resource_index/packages', 
+            ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
-        (f'share/{package_name}/data', [
-            'data/intrinsics.yaml',
-            'data/extrinsics.yaml'
+        (os.path.join('share',package_name,'data'), [
+            os.path.join('data','intrinsics.yaml'),
+            os.path.join('data','extrinsics.yaml')
             ]),
-            (f'share/{package_name}',['position_velocity/config/apriltag_calibration_config.yaml'])
+            (os.path.join('share',package_name,'config'),[
+                os.path.join('config','apriltag_calibration_config.yaml')
+                ])
     ],
-    install_requires=['setuptools'],
+    install_requires=[
+        'setuptools',
+        'PyYAML',
+        'opencv-python',
+        'numpy',
+        'apriltag'
+        ],
     zip_safe=True,
     maintainer='sharif15',
     maintainer_email='sharifpial225@gmail.com',
     description='Calibration package using AprilTags to generate camera extrinsics',
     license='BSD',
-    tests_require=['pytest'],
+    extras_require={
+        'test': ['pytest']
+    },
     entry_points={
         'console_scripts': [
             'april_tag_calibration = position_velocity.calibration.aprilTagCalibration:main',

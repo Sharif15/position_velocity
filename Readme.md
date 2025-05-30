@@ -13,7 +13,15 @@ go back to the ros2_ws and activate the python envirenment
 ```sh 
 cd ../..
 source venv/bin/activate 
-pip install apriltag
+
+```
+
+Download the required libreries :
+
+go into the position_velocity base folder and run 
+
+```sh
+pip install -r requirements.txt
 
 ```
 
@@ -42,6 +50,6 @@ Then run the desired script :
 
 ```sh
 
-ros2 run position_velocity locate_tag
+ros2 run position_velocity calibration
 
 ```
