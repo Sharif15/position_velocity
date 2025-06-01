@@ -14,6 +14,11 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/ObjectTrackingArray.msg"
 )
 
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+
+# Add dependency for Python package installation
+ament_export_dependencies(rosidl_default_runtime)
+
 # Install Python modules
 ament_python_install_package(${PROJECT_NAME})
 

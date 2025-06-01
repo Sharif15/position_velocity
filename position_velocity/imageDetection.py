@@ -1,7 +1,8 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
-from position_velocity.msg import ObjectTracking, ObjectTrackingArray
+
+from ptz_videography_interfaces.msg import Detections
 
 import cv2
 import numpy as np
@@ -20,7 +21,7 @@ model = YOLO("yolov8x-worldv2.pt")
 model.set_classes(["person"])  # Only detect "person"
 
 # Initialize DeepSORT tracker
-tracker = DeepSort(max_age=30)
+tracker = DeepSort(max_age=10)
 
 class ObjectDetectorNode(Node):
 
@@ -28,7 +29,7 @@ class ObjectDetectorNode(Node):
         super().__init__('object_detector_node')
 
         # Create publisher for object tracking coordinates
-        self.coord_publisher = self.create_publisher(ObjectTrackingArray, 'tracking_coords', 10)
+        self.coord_publisher = self.create_publisher(Detections, 'tracking_coords', 5)
 
         # Subscribe to camera image topic
         self.image_subscriber = self.create_subscription(
@@ -39,6 +40,7 @@ class ObjectDetectorNode(Node):
         )
 
         self.get_logger().info("ObjectDetectorNode initialized and subscribed to /image_raw/compressed")
+        self.running = True
 
     def image_callback(self, msg):
         # Decode compressed image to OpenCV format
@@ -81,9 +83,10 @@ class ObjectDetectorNode(Node):
 
         tracks = tracker.update_tracks(detections, frame=frame)
 
-        msg_out = ObjectTrackingArray()
-        msg_out.frame_width = frame.shape[1]
-        msg_out.frame_height = frame.shape[0]
+        detection_msg = Detections()
+        detection_msg.str_id = []
+        detection_msg.x = []
+        detection_msg.y = []
 
         # Draw and collect tracked object info
         for track in tracks:
@@ -99,21 +102,18 @@ class ObjectDetectorNode(Node):
             class_id = track.det_class
 
             # Add to message
-            tracked_msg = ObjectTracking()
-            tracked_msg.id = track_id
-            tracked_msg.x = x
-            tracked_msg.y = y
-            tracked_msg.width = width
-            tracked_msg.height = height
-            tracked_msg.class_id = class_id
 
-            msg_out.objects.append(tracked_msg)
+            detection_msg.str_id.append(str(track_id))
+            detection_msg.x.append(float(x))
+            detection_msg.y.append(float(y))
 
             # Visualize
             cv2.rectangle(frame, (int(l), int(t)), (int(r), int(b)), (0, 255, 0), 2)
             cv2.putText(frame, f"ID {track_id}", (int(l), int(t) - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-        self.coord_publisher.publish(msg_out)
+        self.coord_publisher.publish(detection_msg)
+
+        # self.coord_publisher.publish(detection_msg)
 
         cv2.imshow("Tracked Objects", frame)
         # if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -124,19 +124,24 @@ class ObjectDetectorNode(Node):
         cv2.imshow("Detection", detection_img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            cv2.destroyAllWindows()
+            # cv2.destroyAllWindows()
+            self.stop()
+
+    def stop(self):
+        self.running = False
 
 def main(args=None):
     rclpy.init(args=args)
     node = ObjectDetectorNode()
     try:
-        rclpy.spin(node)
+        while node.running:
+            rclpy.spin_once(node)
     except KeyboardInterrupt:
         node.get_logger().info("Shutting down object detector")
     finally:
         node.destroy_node()
         cv2.destroyAllWindows()
-        rclpy.shutdown()
+        rclpy.try_shutdown()
 
 if __name__ == '__main__':
     main()

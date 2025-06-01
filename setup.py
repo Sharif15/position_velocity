@@ -28,7 +28,6 @@ setup(
         'opencv-python',
         'numpy',
         'apriltag',
-        'rosidl_default_runtime',
         'rclpy'
         ],
     zip_safe=True,
