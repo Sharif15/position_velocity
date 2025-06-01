@@ -1,0 +1,3 @@
+position_velocity/ObjectTracking[] objects
+int32 frame_height
+int32 frame_width

@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from glob import glob
 import os
 
 package_name = 'position_velocity'
@@ -16,16 +17,19 @@ setup(
             os.path.join('data','intrinsics.yaml'),
             os.path.join('data','extrinsics.yaml')
             ]),
-            (os.path.join('share',package_name,'config'),[
-                os.path.join('config','apriltag_calibration_config.yaml')
-                ])
+        (os.path.join('share',package_name,'config'),[
+            os.path.join('config','apriltag_calibration_config.yaml')
+            ]),
+        (os.path.join('share', package_name, 'msg'), glob(os.path.join('msg','*.msg')))
     ],
     install_requires=[
         'setuptools',
         'PyYAML',
         'opencv-python',
         'numpy',
-        'apriltag'
+        'apriltag',
+        'rosidl_default_runtime',
+        'rclpy'
         ],
     zip_safe=True,
     maintainer='sharif15',

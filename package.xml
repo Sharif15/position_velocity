@@ -8,9 +8,18 @@
   <license>BSD</license>
 
   <buildtool_depend>ament_python</buildtool_depend>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  
+  <build_depend>rosidl_default_generators</build_depend>
+  <build_depend>rclpy</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
 
+  <exec_depend>rosidl_default_runtime</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
   <exec_depend>rclpy</exec_depend>
   <exec_depend>sensor_msgs</exec_depend>
+  
   <exec_depend>opencv-python</exec_depend>
   <exec_depend>pyyaml</exec_depend>
 
