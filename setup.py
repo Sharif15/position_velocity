@@ -17,10 +17,7 @@ setup(
             os.path.join('data','intrinsics.yaml'),
             os.path.join('data','extrinsics.yaml')
             ]),
-        (os.path.join('share',package_name,'config'),[
-            os.path.join('config','apriltag_calibration_config.yaml')
-            ]),
-        (os.path.join('share', package_name, 'msg'), glob(os.path.join('msg','*.msg')))
+        (os.path.join('share',package_name,'config'), glob(os.path.join('config','*.yaml')))
     ],
     install_requires=[
         'setuptools',
@@ -28,7 +25,9 @@ setup(
         'opencv-python',
         'numpy',
         'apriltag',
-        'rclpy'
+        'rclpy',
+        'deep_sort_realtime',
+        'ultralytics'
         ],
     zip_safe=True,
     maintainer='sharif15',
@@ -40,10 +39,11 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'april_tag_calibration = position_velocity.calibration.aprilTagCalibration:main',
-            'locate_tag = position_velocity.calibration.singleTagDetection:main',
-            'object_detection = position_velocity.imageDetection:main',
-            'calibration = position_velocity.calibration.singleTagDetection_config:main'
+            'object_detection = position_velocity.object_tracking.imageDetection:main',
+            'calibration = position_velocity.calibration.singleTagDetection_config:main',
+            'calculate_position = position_velocity.calculations.cameraToWorld:main',
+            # test
+            'test_position = position_velocity.calculations.position_test:main'
         ],
     },
 )
