@@ -50,6 +50,38 @@ Then run the desired script :
 
 ```sh
 
+ros2 run position_velocity < entry_point >
+
+```
+
+### Entry points so far 
+
+Calibration : 
+
+```sh
+
 ros2 run position_velocity calibration
 
 ```
+
+Object detection and tracking with id : 
+
+```sh
+
+ros2 run position_velocity object_detection
+
+```
+
+Calculate world position : 
+
+```sh
+
+ros2 run position_velocity calculate_position
+
+```
+
+#### Still to come ... 
+
+- Unified script to calculate world position and velocity of object and exporting the data in a ros topic using the states.msg format 
+
+- Launch script to automate running the calibration script and then the object detection and position velocity calculation script 
