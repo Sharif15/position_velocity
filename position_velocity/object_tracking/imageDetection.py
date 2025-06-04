@@ -18,7 +18,7 @@ logging.getLogger("ultralytics").setLevel(logging.WARNING)
 
 # Load YOLO model (make sure the weights file exists at the path)
 model = YOLO("yolov8x-worldv2.pt")
-model.set_classes(["person"])  # Only detect "person"
+model.set_classes(["water bottle","hydroflask"])  # Only detect "person"
 
 # Initialize DeepSORT tracker
 tracker = DeepSort(max_age=10)
@@ -29,7 +29,7 @@ class ObjectDetectorNode(Node):
         super().__init__('object_detector_node')
 
         # Create publisher for object tracking coordinates
-        self.coord_publisher = self.create_publisher(Detections, 'tracking_coords', 5)
+        self.coord_publisher = self.create_publisher(Detections, 'tracking_coords', 10)
 
         # Subscribe to camera image topic
         self.image_subscriber = self.create_subscription(
@@ -61,7 +61,12 @@ class ObjectDetectorNode(Node):
         if len(boxes) == 0:
             # Update tracker with empty detections to handle track aging
             tracks = tracker.update_tracks([], frame=frame)
-            return  # No objects detected
+            # Still show the empty frame
+            cv2.imshow("Tracked Objects", frame)
+            cv2.imshow("Detection", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                self.stop()
+            return
 
         # Making the input for DeepSORT 
 
@@ -96,7 +101,8 @@ class ObjectDetectorNode(Node):
             track_id = track.track_id
             l, t, r, b = track.to_ltrb()
             x = (l + r) / 2.0
-            y = (t + b) / 2.0
+            # y = (t + b) / 2.0
+            y = b
             width = r - l
             height = b - t
             class_id = track.det_class
@@ -113,6 +119,8 @@ class ObjectDetectorNode(Node):
 
         self.coord_publisher.publish(detection_msg)
 
+        print(detection_msg)
+
         # self.coord_publisher.publish(detection_msg)
 
         cv2.imshow("Tracked Objects", frame)
@@ -124,7 +132,7 @@ class ObjectDetectorNode(Node):
         cv2.imshow("Detection", detection_img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
-            # cv2.destroyAllWindows()
+            cv2.destroyAllWindows()
             self.stop()
 
     def stop(self):

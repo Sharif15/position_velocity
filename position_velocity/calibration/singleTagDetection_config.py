@@ -84,7 +84,7 @@ class ConfigurableAprilTagCalibrator(Node):
         self.resolve_paths()
         self.get_logger().info(f"Configuration loaded from: {self.config_path}")
 
-
+    # Get the desired path from the config file the intrensics and extrensics 
     def resolve_paths(self):
         """Resolve relative paths in configuration"""
         try:

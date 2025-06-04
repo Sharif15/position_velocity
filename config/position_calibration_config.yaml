@@ -1,0 +1,16 @@
+# File Paths
+paths:
+  # Path to camera intrinsics YAML file
+  # Use absolute path or relative to package share directory
+  intrinsics: "intrinsics.yaml"
+  
+  # Path where extrinsics will be saved
+  # Use absolute path or relative to package share directory  
+  extrinsics: "extrinsics.yaml"
+
+# Camera Settings
+camera:
+  topic: "/image_raw/compressed"    # ROS topic for camera images
+  target_width: 1920                 # Target width for image processing (reduces computation)
+  target_height: 1080                # Target height for image processing
+  process_every_n_frames: 2         # Process every N frames (1=every frame, 2=every other frame, etc.)
