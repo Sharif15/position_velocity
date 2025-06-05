@@ -18,7 +18,7 @@ logging.getLogger("ultralytics").setLevel(logging.WARNING)
 
 # Load YOLO model (make sure the weights file exists at the path)
 model = YOLO("yolov8x-worldv2.pt")
-model.set_classes(["water bottle","hydroflask"])  # Only detect "person"
+model.set_classes(["water bottle","hydroflask","stuffed animal","teddy Bear"])  # Only detect "person"
 
 # Initialize DeepSORT tracker
 tracker = DeepSort(max_age=10)

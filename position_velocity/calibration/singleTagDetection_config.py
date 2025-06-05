@@ -367,6 +367,7 @@ class ConfigurableAprilTagCalibrator(Node):
                 'translation_vector': avg_tvec.flatten().tolist(),
                 'rotation_matrix': avg_rotation_matrix.tolist(),
                 'transformation_matrix': transformation.tolist(),
+                # 'scaled_intrinsics' : self.scaled_camera_matrix.flatten().tolist(),
                 'camera_to_world_transform': transformation.tolist()
             },
             'quality_metrics': {
