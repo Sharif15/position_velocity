@@ -54,10 +54,10 @@ class ConfigurableAprilTagCalibrator(Node):
         # Define 3D world coordinates of the single tag at origin
         half_size = self.config['apriltag']['size'] / 2.0
         self.tag_3d_points = np.array([
-            [-half_size, half_size, 0.0],  # Bottom-left corner
-            [ half_size, half_size, 0.0],  # Bottom-right corner  
-            [ half_size,  -half_size, 0.0],  # Top-right corner
-            [-half_size,  -half_size, 0.0]   # Top-left corner
+            [-half_size, half_size, 0.0],  # top-left corner , 0
+            [ half_size, half_size, 0.0],  # top-right corner, 1
+            [ half_size,  -half_size, 0.0],  # bottom-right corner , 2
+            [-half_size,  -half_size, 0.0]   # bottom-left corner, 3
         ], dtype=np.float32)
 
         # Setup AprilTag detector with configurable options
@@ -157,6 +157,10 @@ class ConfigurableAprilTagCalibrator(Node):
             scaled_camera_matrix = self.camera_matrix.copy()
             scaled_camera_matrix[0, :] *= scale  # fx and cx
             scaled_camera_matrix[1, :] *= scale  # fy and cy
+            print("scaled frame")
+            self.camera_matrix = scaled_camera_matrix
+
+
         else:
             scaled_camera_matrix = self.camera_matrix
 
@@ -175,8 +179,8 @@ class ConfigurableAprilTagCalibrator(Node):
             self.get_logger().error(f"AprilTag detection failed: {e}")
             cv2.putText(frame, "Detection Error - Check lighting/focus", (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            display_fram = cv2.resize(frame, (960, 540))
-            cv2.imshow("Configurable AprilTag Calibration", display_fram)
+            # display_fram = cv2.resize(frame, (960, 540))
+            cv2.imshow("Configurable AprilTag Calibration", frame)
             cv2.waitKey(1)
             return
         
@@ -199,7 +203,8 @@ class ConfigurableAprilTagCalibrator(Node):
                 cv2.circle(frame, (int(corner[0]), int(corner[1])), 5, (255, 0, 0), -1)
                 cv2.putText(frame, str(i), (int(corner[0])+10, int(corner[1])+10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-            
+                print(f"corner {i} : {corner}")
+
             # Draw center and ID
             center = target_tag.center
             cv2.circle(frame, (int(center[0]), int(center[1])), 3, (0, 0, 255), -1)
@@ -320,8 +325,8 @@ class ConfigurableAprilTagCalibrator(Node):
 
         # display is only for testing purposes will not be needed in the final product 
 
-        display_fram = cv2.resize(frame, (960, 540))
-        cv2.imshow("Configurable AprilTag Calibration", display_fram)
+        # display_fram = cv2.resize(frame, (960, 540))
+        cv2.imshow("Configurable AprilTag Calibration", frame)
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):

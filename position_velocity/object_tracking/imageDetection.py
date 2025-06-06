@@ -51,9 +51,6 @@ class ObjectDetectorNode(Node):
             self.get_logger().warn("Received empty or corrupted image frame")
             return
 
-        # Resize for faster processing (optional)
-        frame = cv2.resize(frame, (960, 540))
-
         # Run YOLO detection
         results = model(frame)
         boxes = results[0].boxes
