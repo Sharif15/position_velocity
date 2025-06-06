@@ -36,7 +36,34 @@ source install/setup.bash
 
 ```
 
-## Running the script 
+## Running the package 
+
+There are two ways the package can be started 
+
+1. Launching with starting the camera 
+2. Launching without starting the camera
+
+### Launching with the camera 
+
+To launch the product along with the camera run this : 
+
+```sh
+
+ros2 launch position_velocity position_velocity.launch.py launch_camera:=true
+
+```
+
+### Launching without the camera 
+
+To run the product with rosbag or camera that is already launched use this : 
+
+```sh
+
+ros2 launch position_velocity position_velocity.launch.py
+
+```
+
+## Running the scripts Manually 
 
 To run the script we need to activate our current camera first 
 
@@ -83,5 +110,3 @@ ros2 run position_velocity calculate_position
 #### Still to come ... 
 
 - Unified script to calculate world position and velocity of object and exporting the data in a ros topic using the states.msg format 
-
-- Launch script to automate running the calibration script and then the object detection and position velocity calculation script 
