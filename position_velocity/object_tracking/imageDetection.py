@@ -58,6 +58,7 @@ class ObjectDetectorNode(Node):
         if len(boxes) == 0:
             # Update tracker with empty detections to handle track aging
             tracks = tracker.update_tracks([], frame=frame)
+            
             # Still show the empty frame
             cv2.imshow("Tracked Objects", frame)
             cv2.imshow("Detection", frame)
@@ -116,16 +117,16 @@ class ObjectDetectorNode(Node):
 
         self.coord_publisher.publish(detection_msg)
 
-        print(detection_msg)
+        # Resizing the image for display only - deepSort
 
-        # self.coord_publisher.publish(detection_msg)
+        display_frame = frame.copy()
+        display_frame = cv2.resize(display_frame,(960,540))
+        cv2.imshow("Tracked Objects", display_frame)
 
-        cv2.imshow("Tracked Objects", frame)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     cv2.destroyAllWindows()
-
-        # Optional: Show image with detection (for debugging)
+        # Optional: Show image with detection (for debugging) - yolo World
+        
         detection_img = results[0].plot()
+        detection_img = cv2.resize(detection_img,(960,540))
         cv2.imshow("Detection", detection_img)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):

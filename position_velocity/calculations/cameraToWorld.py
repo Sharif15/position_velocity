@@ -13,7 +13,6 @@ import os
 
 class PixelConverter(Node):
 
-
     def __init__(self,config_path):
         super().__init__('pixel_converter')
 
@@ -74,20 +73,8 @@ class PixelConverter(Node):
 
                     result = np.array(self.pixel_to_world(u,v))
 
-                    result_1 = self.pixel_to_world_1(u,v)
-
-                    result_2 = self.pixel_to_world_2(u,v)
-                    result_3 = self.pixel_to_world_coordinates(u, v)
-                    print(f"Rotation matrix : {self.R}")
-
-                    print(f"translation matrix : {self.t}")
-
                     print(f"World coords: {result}")
 
-                    print(f"World Coords_1 : {result_1}")
-
-                    print(f"World Coords_2 : {result_2}")
-                    print(f"World Coords_3 : {result_3}")
                     if result is None:
                         continue
 
@@ -149,35 +136,7 @@ class PixelConverter(Node):
             import traceback
             traceback.print_exc()
             raise
-
-    def compute_depth_to_plane(self, u, v):
-        """
-        Compute depth scale 's' for pixel (u, v) assuming the point lies on the plane Z = 0.
-        """
-        pixel_homog = np.array([[u], [v], [1]])
-        ray_cam = self.K_inv @ pixel_homog
-        ray_world = self.R_inv @ ray_cam
-        ray_world /= np.linalg.norm(ray_world)
-
-        cam_world = self.cam_position.flatten()
-        ray = ray_world.flatten()
-
-        if ray[2] == 0:
-            raise ValueError("Ray is parallel to the ground plane")
-
-        s = -cam_world[2] / ray[2]  # intersection with Z = 0
-        return s, cam_world, ray
-
-    def pixel_to_world_coordinates(self, u, v):
-        """
-        Convert pixel (u, v) to world coordinates assuming the point lies on the ground plane Z = 0.
-        """
-        s, cam_origin, ray = self.compute_depth_to_plane(u, v)
-        point_world = cam_origin + s * ray
-        x, y = point_world[0], point_world[1]  # return x, y only
-        return abs(x) - abs(self.cam_position[0]), abs(y) - abs(self.cam_position[1])
-
-    
+ 
     # function that does the calculation for camera pixel to world conversion 
     def pixel_to_world(self, u, v, Z_world=0):
             # Build pixel homogeneous coordinate
@@ -202,57 +161,8 @@ class PixelConverter(Node):
             world_point = self.cam_position + s * ray_world
 
             return world_point.flatten()
-    def pixel_to_world_1(self, u, v):
-        
-        image_mat = [u, v, 1]
 
-        X_cp = (u - self.scaled_cam[0][2])/self.scaled_cam[0][0] # what is the scaled_cam 
-        Y_cp = (v - self.scaled_cam[1][2])/self.scaled_cam[1][1]
-
-        X_c = X_cp
-        Y_c = Y_cp
-        r = self.R
-        #X_w, Y_w
-        eqs = np.array([
-            [r[0][0], r[0][1]], #r00*X_w + #r01Y_w + tx = X_c
-            [r[1][0], r[1][1]], #r10*X_w + #r11Y_w + ty = Y_c 
-        ])
-        sols = np.array([X_c-self.t[0][0], Y_c-self.t[1][0]])
-
-        result = np.linalg.solve(eqs,sols)
-
-        print(result)
-
-        return result
-
-
-    # Third attempt at this function 
-
-    def pixel_to_world_2(self,u,v):
-
-        pixel_vec = np.array([u, v, 1])  # homogeneous pixel vector
-
-        Rt = np.hstack((self.R, self.t))   # 3x4
-        A = self.K @ Rt                    # 3x4
-
-        # Extract projection matrix columns
-        a1 = A[:, 0].reshape(3, 1)
-        a2 = A[:, 1].reshape(3, 1)
-        a3 = A[:, 2].reshape(3, 1)
-        a4 = A[:, 3].reshape(3, 1)
-
-        B = np.hstack((a1, a2))            # 3x2
-        C = pixel_vec.reshape(3, 1) - a4 -a3  # 3x1
-
-        # Least-squares solution
-        world_coords = np.linalg.inv(B.T @ B) @ (B.T @ C)  # 2x1
-
-        x, y = float(world_coords[0])/100, float(world_coords[1])/100
-        return x, y
-
-    
     '''
-    
     Function used for verifying the accuracy of back projection. 
     
     Using the 3D world points we calculate as an input to go back to the original 2D pixel coordinates 

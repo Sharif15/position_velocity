@@ -203,8 +203,7 @@ class ConfigurableAprilTagCalibrator(Node):
                 cv2.circle(frame, (int(corner[0]), int(corner[1])), 5, (255, 0, 0), -1)
                 cv2.putText(frame, str(i), (int(corner[0])+10, int(corner[1])+10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                print(f"corner {i} : {corner}")
-
+                           
             # Draw center and ID
             center = target_tag.center
             cv2.circle(frame, (int(center[0]), int(center[1])), 3, (0, 0, 255), -1)
@@ -245,7 +244,7 @@ class ConfigurableAprilTagCalibrator(Node):
                     [0, 0, 0],           # Origin
                     [0.05, 0, 0],        # X-axis (red)
                     [0, 0.05, 0],        # Y-axis (green)  
-                    [0, 0, -0.05]        # Z-axis (blue, pointing up from tag)
+                    [0, 0, 0.05]        # Z-axis (blue, pointing up from tag)
                 ], dtype=np.float32)
                 
                 axis_img_points, _ = cv2.projectPoints(
@@ -321,12 +320,11 @@ class ConfigurableAprilTagCalibrator(Node):
             cv2.putText(frame, "Please ensure tag is visible and well-lit", (10, 60), 
                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 100, 255), 2)
 
-        # cv2.imshow("Configurable AprilTag Calibration", frame)
-
         # display is only for testing purposes will not be needed in the final product 
 
-        # display_fram = cv2.resize(frame, (960, 540))
-        cv2.imshow("Configurable AprilTag Calibration", frame)
+        display_frame = frame.copy()
+        display_frame = cv2.resize(display_frame, (960, 540))
+        cv2.imshow("Configurable AprilTag Calibration", display_frame)
         
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
