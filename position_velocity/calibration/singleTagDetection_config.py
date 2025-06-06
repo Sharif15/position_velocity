@@ -203,7 +203,7 @@ class ConfigurableAprilTagCalibrator(Node):
                 cv2.circle(frame, (int(corner[0]), int(corner[1])), 5, (255, 0, 0), -1)
                 cv2.putText(frame, str(i), (int(corner[0])+10, int(corner[1])+10), 
                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
-                           
+
             # Draw center and ID
             center = target_tag.center
             cv2.circle(frame, (int(center[0]), int(center[1])), 3, (0, 0, 255), -1)
@@ -305,11 +305,11 @@ class ConfigurableAprilTagCalibrator(Node):
                     self.save_averaged_extrinsics()
                     self.extrinsics_saved = True  # Set flag instead of calibration_complete
 
-                key = cv2.waitKey(1) & 0xFF
-                if key == ord('q'):
-                    self.get_logger().info("Stable detection achieved! Auto-saving extrinsics...")
-                    self.save_averaged_extrinsics()
-                    self.calibration_complete = True
+                # key = cv2.waitKey(1) & 0xFF
+                # if key == ord('q'):
+                #     self.get_logger().info("Stable detection achieved! Auto-saving extrinsics...")
+                #     self.save_averaged_extrinsics()
+                #     self.calibration_complete = True
                     
         else:
             # Reset detection count if no tag found
@@ -327,7 +327,8 @@ class ConfigurableAprilTagCalibrator(Node):
         cv2.imshow("Configurable AprilTag Calibration", display_frame)
         
         key = cv2.waitKey(1) & 0xFF
-        if key == ord('q'):
+        if self.extrinsics_saved:
+            time.sleep(5) # Wait for 5 seconds 
             self.get_logger().info("Quitting calibration")
             self.calibration_complete = True
             cv2.destroyAllWindows()
