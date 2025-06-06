@@ -43,8 +43,6 @@ setup(
             'object_detection = position_velocity.object_tracking.imageDetection:main',
             'calibration = position_velocity.calibration.singleTagDetection_config:main',
             'calculate_position = position_velocity.calculations.cameraToWorld:main',
-            # test
-            'test_position = position_velocity.calculations.position_test:main'
         ],
     },
 )
