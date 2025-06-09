@@ -328,7 +328,7 @@ class ConfigurableAprilTagCalibrator(Node):
         
         key = cv2.waitKey(1) & 0xFF
         if self.extrinsics_saved:
-            time.sleep(5) # Wait for 5 seconds 
+            time.sleep(2.5) # Wait for 2.5 seconds 
             self.get_logger().info("Quitting calibration")
             self.calibration_complete = True
             cv2.destroyAllWindows()

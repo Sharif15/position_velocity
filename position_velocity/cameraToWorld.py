@@ -3,7 +3,13 @@ from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
 
 from ptz_videography_interfaces.msg import Detections
+from ptz_videography_interfaces.msg import Coordinates
+
 from ament_index_python.packages import get_package_share_directory
+
+# importing the velocity calculation function 
+
+from position_velocity.velocityCalculation import VelocityTracker
 
 
 import cv2
@@ -11,9 +17,12 @@ import numpy as np
 import yaml
 import os
 
+import time
+
 class PixelConverter(Node):
 
     def __init__(self,config_path):
+        
         super().__init__('pixel_converter')
 
         if not config_path or not os.path.exists(config_path):
@@ -35,18 +44,23 @@ class PixelConverter(Node):
         self.cam_position = -self.R.T @ self.t.reshape(3, 1)
         
         self.get_logger().info(f"Camera position in world coords: {self.cam_position.flatten()}")
-        
         self.get_logger().info("Camera parameters loaded successfully")
 
+        # Make a publisher for the world coordinates 
+        self.position_publisher = self.create_publisher(Coordinates, 'world_coordinates', 10)
 
         #Subscribe to the Detections topic for the pixel (x,y,id)
-
         self.coords_subscriber = self.create_subscription(
             Detections,
             'tracking_coords',
             self.position_calculation,
             10
         )
+
+        # initialize the velocity calculation function 
+
+        # self.velocity_tracker = VelocityTracker()
+
 
     # Used to calculate the realworld position from pixel data 
 
@@ -61,6 +75,18 @@ class PixelConverter(Node):
             str_ids = msg.str_id if hasattr(msg, 'str_id') else []
             
             print(f"Number of detections: {len(u_array)}")
+
+            # Build the message array to publish the world coords of objects 
+
+            world_coords_msg = Coordinates()
+
+            world_coords_msg.str_id = []
+
+            world_coords_msg.x = []
+
+            world_coords_msg.y = []
+
+            world_coords_msg.z = []
                         
             for i in range(len(u_array)):
                 try:
@@ -75,8 +101,22 @@ class PixelConverter(Node):
 
                     print(f"World coords: {result}")
 
+                    # Add the calculated position to the messege 
+
+                    world_coords_msg.str.append(str_id)
+                    world_coords_msg.x.append(result[0])
+                    world_coords_msg.y.append(result[1])
+                    world_coords_msg.z.append(result[2])
+
+                    # Do velocity calculation for the given position 
+
+                    # object_velocity = self.velocity_tracker.update_position(result[:2])  # Only x, y
+                    # print(f"Smoothed velocity: {object_velocity}")
+
                     if result is None:
                         continue
+
+                    # delete the reprojection code for the final product 
 
                     reprojection = np.array(self.project_world_to_pixel(result))
 
@@ -85,6 +125,10 @@ class PixelConverter(Node):
                 except Exception as detection_error:
                     print(f"ERROR processing detection {i}: {detection_error}")
                     continue
+
+            # publish the messege 
+            self.position_publisher.publish(world_coords_msg)
+
 
         except Exception as e:
             print(f"ERROR in position_calculation: {e}")
@@ -100,43 +144,45 @@ class PixelConverter(Node):
         D = np.array(cam_data['distortion_coefficients'])
         return K, D
 
-    def load_extrinsics(self, yaml_path):
+    def load_extrinsics(self, yaml_path, max_wait_seconds=10, retry_interval=0.5):
+       
+        """Retry loading extrinsics until valid or timeout."""
 
-        try:
-            print(f"Loading extrinsics from: {yaml_path}")
-            with open(yaml_path, 'r') as file:
-                extrinsics_data = yaml.safe_load(file)
+        start_time = time.time()
 
-            # Get rotation matrix and translation vector from pose_data
-            r_raw = extrinsics_data['pose_data']['rotation_matrix']
-            t_raw = extrinsics_data['pose_data']['translation_vector']
+        while True:
+            try:
+                if not os.path.exists(yaml_path):
+                    raise FileNotFoundError(f"{yaml_path} does not exist yet.")
 
-            print(f"Raw Rotation matrix: {r_raw}")
-            print(f"Raw Translation vector: {t_raw}")
-            print(f"Type of r_raw: {type(r_raw)}")
-            print(f"Type of t_raw: {type(t_raw)}")
+                with open(yaml_path, 'r') as file:
+                    extrinsics_data = yaml.safe_load(file)
 
-            # Convert rotation matrix to numpy array
-            print("Converting rotation matrix to numpy array...")
-            R = np.array(r_raw, dtype=np.float64)
-            print(f"R shape after conversion: {R.shape}")
-            
-            if R.shape != (3, 3):
-                raise ValueError(f"Expected 3x3 rotation matrix, got shape {R.shape}")
+                if not extrinsics_data or 'pose_data' not in extrinsics_data:
+                    raise ValueError(f"Invalid or incomplete extrinsics data in {yaml_path}")
 
-            # Convert translation vector to numpy array
-            print("Converting translation vector to numpy array...")
-            t = np.array(t_raw, dtype=np.float64).reshape(3, 1)
-            print(f"t shape after conversion: {t.shape}")
+                r_raw = extrinsics_data['pose_data']['rotation_matrix']
+                t_raw = extrinsics_data['pose_data']['translation_vector']
 
-            return R, t
-            
-        except Exception as e:
-            print(f"ERROR in load_extrinsics: {e}")
-            import traceback
-            traceback.print_exc()
-            raise
- 
+                R = np.array(r_raw, dtype=np.float64)
+                if R.shape != (3, 3):
+                    raise ValueError(f"Expected 3x3 rotation matrix, got shape {R.shape}")
+
+                t = np.array(t_raw, dtype=np.float64).reshape(3, 1)
+
+                self.get_logger().info("Extrinsics loaded successfully.")
+                return R, t
+
+            except Exception as e:
+                elapsed = time.time() - start_time
+                if elapsed >= max_wait_seconds:
+                    self.get_logger().error(f"Timeout while waiting for valid extrinsics: {e}")
+                    raise  # Let the node crash if it's never valid
+
+                self.get_logger().warn(f"Waiting for valid extrinsics file... retrying in {retry_interval}s")
+                time.sleep(retry_interval)
+
+
     # function that does the calculation for camera pixel to world conversion 
     def pixel_to_world(self, u, v, Z_world=0):
             # Build pixel homogeneous coordinate
@@ -167,6 +213,8 @@ class PixelConverter(Node):
     
     Using the 3D world points we calculate as an input to go back to the original 2D pixel coordinates 
     
+    Delete for final product 
+
     '''
     def project_world_to_pixel(self, point_3d_world):
 

@@ -40,9 +40,10 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'object_detection = position_velocity.object_tracking.imageDetection:main',
-            'calibration = position_velocity.calibration.singleTagDetection_config:main',
-            'calculate_position = position_velocity.calculations.cameraToWorld:main',
+            'object_detection = position_velocity.imageDetection:main',
+            'calibration = position_velocity.singleTagDetection_config:main',
+            'calculate_position = position_velocity.cameraToWorld:main',
+            'kalman_velocity = position_velocity.kalman_filter:main'
         ],
     },
 )
