@@ -103,7 +103,7 @@ class PixelConverter(Node):
 
                     # Add the calculated position to the messege 
 
-                    world_coords_msg.str.append(str_id)
+                    world_coords_msg.str_id.append(str_id)
                     world_coords_msg.x.append(result[0])
                     world_coords_msg.y.append(result[1])
                     world_coords_msg.z.append(result[2])

@@ -76,6 +76,9 @@ class Tracker(Node):
 
         # Loop through each detected object
         for str_id, x, y, z in zip(msg.str_id, msg.x, msg.y, msg.z):
+
+            print(f"The input : {msg}")
+
             # Check if we already have a Kalman filter for this object
             if str_id not in self.kalman_publishers:
                 threading.Thread(target=self.send_create_request, args=(str_id,)).start()
@@ -127,6 +130,8 @@ class Tracker(Node):
 
         # Publish the states message
         self.objects_publisher.publish(states_msg)
+        
+        print(f"The velocities : {states_msg}")
 
 
 def main(args=None):
