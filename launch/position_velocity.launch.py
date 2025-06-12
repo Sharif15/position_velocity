@@ -19,9 +19,21 @@ def generate_launch_description():
 
     launch_camera = LaunchConfiguration('launch_camera')
 
+
+    # Flag used for simulation argument
+
+    launch_sim_arg = DeclareLaunchArgument(
+        'sim', default_value='false',
+        description='Set to true if running in simulation'
+    )
+    
+    sim = LaunchConfiguration('sim')
+ 
+
+
     # Launch Axis drivers with parameters
     axis_camera_1 = GroupAction([
-        PushRosNamespace('axis_1'),
+        #PushRosNamespace('axis_1'),
         IncludeLaunchDescription(
             XMLLaunchDescriptionSource(
                 os.path.join(
@@ -75,7 +87,6 @@ def generate_launch_description():
     calculate_velocity_node = Node(
         package='position_velocity',
         executable= 'kalman_velocity',
-        name='calculate_velocity_node',
         output='screen'
 
     )

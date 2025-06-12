@@ -34,7 +34,7 @@ class ObjectDetectorNode(Node):
         # Subscribe to camera image topic
         self.image_subscriber = self.create_subscription(
             CompressedImage,
-            '/image_raw/compressed',
+            '/image-raw/compressed',
             self.image_callback,
             10
         )
